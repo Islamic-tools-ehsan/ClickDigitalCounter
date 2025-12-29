@@ -56,6 +56,10 @@
         input[type=number] {
             -moz-appearance: textfield;
         }
+
+        /* Tooltip style for desktop */
+        .tooltip { visibility: hidden; opacity: 0; transition: 0.2s; }
+        .group:hover .tooltip { visibility: visible; opacity: 1; }
     </style>
 <script type="importmap">
 {
@@ -79,7 +83,7 @@
             <div class="flex items-center space-x-4">
                 <button onclick="toggleHaptics()" class="p-2 rounded-full hover:bg-slate-100 transition-colors" id="haptics-btn">
                     <svg class="w-5 h-5 text-emerald-600" id="haptics-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2-2H8a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
                 </button>
                 <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-slate-100 transition-colors" id="theme-btn">
@@ -120,13 +124,14 @@
             </div>
         </main>
 
-        <!-- Controls & Info -->
-        <footer class="w-full z-30 flex flex-col items-center space-y-6 pb-4 sm:pb-8">
+        <!-- Controls Dashboard -->
+        <footer class="w-full z-30 flex flex-col items-center space-y-6 pb-6">
             <div id="toast" class="opacity-0 translate-y-4 transition-all duration-500 bg-emerald-600 text-white px-6 py-2 rounded-full text-sm font-semibold shadow-lg">
                 Target Reached!
             </div>
 
-            <div class="flex flex-wrap justify-center gap-2" id="preset-container">
+            <!-- Mode/Preset Container: Snaps right on desktop/scaled view -->
+            <div class="flex flex-wrap justify-center gap-2 sm:fixed sm:bottom-8 sm:right-8 sm:z-50 sm:flex-nowrap sm:bg-white/10 sm:backdrop-blur-md sm:p-2 sm:rounded-2xl sm:border sm:border-white/20 sm:shadow-2xl" id="preset-container">
                 <!-- Preset buttons injected here -->
             </div>
 
@@ -135,9 +140,9 @@
                 <p id="virtue" class="text-[10px] leading-relaxed opacity-60 text-slate-700"></p>
             </div>
 
-            <!-- Restart Button: Anchor to bottom-left on desktop screens -->
+            <!-- Restart Button: Snaps left on desktop/scaled view -->
             <button onclick="resetCount()" class="flex flex-col items-center space-y-2 group active:scale-95 transition-all sm:fixed sm:bottom-8 sm:left-8 sm:z-50 sm:items-start">
-                <div class="p-4 rounded-full bg-red-600 text-white shadow-lg shadow-red-900/20 group-hover:bg-red-700 sm:backdrop-blur-md sm:bg-red-600/90 sm:border sm:border-red-400/30">
+                <div class="p-4 rounded-full bg-red-600 text-white shadow-lg shadow-red-900/20 group-hover:bg-red-700 sm:backdrop-blur-lg sm:bg-red-600/90 sm:border sm:border-red-400/30">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
@@ -186,20 +191,20 @@
 
         // Tap Visual Effect
         function createClickDot(e) {
-            if (!e || typeof e.clientX === 'undefined') return;
+            if (!e || (typeof e.clientX === 'undefined' && (!e.touches || !e.touches[0]))) return;
+            const x = e.clientX || e.touches[0].clientX;
+            const y = e.clientY || e.touches[0].clientY;
+            
             const dot = document.createElement('div');
             dot.className = 'click-dot';
-            dot.style.left = `${e.clientX - 6}px`;
-            dot.style.top = `${e.clientY - 6}px`;
+            dot.style.left = `${x - 6}px`;
+            dot.style.top = `${y - 6}px`;
             document.body.appendChild(dot);
             
-            // Trigger animation in next frame
             requestAnimationFrame(() => {
                 dot.style.opacity = '0';
                 dot.style.transform = 'scale(2.5)';
             });
-            
-            // Remove after animation finishes
             setTimeout(() => dot.remove(), 200);
         }
 
@@ -281,7 +286,7 @@
                 btn.className = `px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wide uppercase transition-all duration-300 ${
                     state.presetId === p.id 
                     ? 'bg-emerald-600 text-white shadow-lg scale-105' 
-                    : (state.isDarkMode ? 'bg-slate-900 text-slate-400 border border-slate-800' : 'bg-slate-100 text-slate-500 border border-slate-200')
+                    : (state.isDarkMode ? 'bg-slate-900 text-slate-400 border border-slate-800 sm:bg-slate-900/50' : 'bg-slate-100 text-slate-500 border border-slate-200 sm:bg-white/50')
                 }`;
                 btn.onclick = (e) => { e.stopPropagation(); setPreset(p.id); };
                 container.appendChild(btn);
@@ -290,17 +295,12 @@
 
         function increment(e) {
             state.count++;
-            
-            // Tap Visual Effect
             createClickDot(e);
-            
             if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
             if (state.hapticsEnabled && window.navigator.vibrate) window.navigator.vibrate(40);
-            
             const counter = document.getElementById('counter-val');
             counter.style.transform = 'scale(1.25)';
             setTimeout(() => counter.style.transform = 'scale(1)', 100);
-
             const activeTarget = state.presetId === 'CUSTOM' ? state.customTarget : PRESETS[state.presetId].target;
             if (activeTarget && state.count === activeTarget) {
                 if (state.hapticsEnabled && window.navigator.vibrate) window.navigator.vibrate([100, 50, 100]);
