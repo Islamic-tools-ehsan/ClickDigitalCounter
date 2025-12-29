@@ -1,42 +1,354 @@
 
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ClickDigitalCounter</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
-      body {
-        font-family: 'Inter', sans-serif;
-        touch-action: manipulation;
-        -webkit-tap-highlight-color: transparent;
-      }
-      .font-poppins {
-        font-family: 'Poppins', sans-serif;
-      }
-      /* Prevent scrolling on mobile for a full-app feel */
-      html, body {
-        overflow: hidden;
-        height: 100%;
-        position: fixed;
-        width: 100%;
-      }
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            overflow: hidden;
+            height: 100%;
+            position: fixed;
+            width: 100%;
+        }
+        .font-poppins { font-family: 'Poppins', sans-serif; }
+        .tap-scale { transition: transform 0.1s ease-out; }
+        .tap-scale:active { transform: scale(0.95); }
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        @keyframes pulse-emerald {
+            0%, 100% { opacity: 0.2; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.1); }
+        }
+        .glow-effect { animation: pulse-emerald 3s infinite ease-in-out; }
+        
+        /* Hide arrows/spinners in number input */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
     </style>
-  <script type="importmap">
+<script type="importmap">
 {
   "imports": {
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
     "react": "https://esm.sh/react@^19.2.3",
-    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
-    "canvas-confetti": "https://esm.sh/canvas-confetti@^1.9.3"
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
 </head>
-  <body>
-    <div id="root"></div>
-  </body>
+<body class="transition-colors duration-700 bg-[#FDFCFB] text-slate-800" id="app-body">
+    <div class="h-screen w-full flex flex-col items-center justify-between p-6">
+        
+        <!-- Header -->
+        <header class="w-full flex items-center justify-between z-40">
+            <div class="flex items-center space-x-2">
+                <div class="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" id="status-dot"></div>
+                <h1 class="text-sm font-poppins font-semibold tracking-tight">ClickDigitalCounter</h1>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <button onclick="toggleHaptics()" class="p-2 rounded-full hover:bg-slate-100 transition-colors" id="haptics-btn">
+                    <svg class="w-5 h-5 text-emerald-600" id="haptics-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                </button>
+                <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-slate-100 transition-colors" id="theme-btn">
+                    <svg class="w-5 h-5 text-slate-700" id="theme-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Counter Area -->
+        <main class="flex-1 w-full flex flex-col items-center justify-center relative">
+            <div class="absolute inset-0 z-10 cursor-pointer" onclick="increment()"></div>
+            
+            <div class="z-20 pointer-events-none flex flex-col items-center">
+                <div class="relative flex items-center justify-center w-64 h-64">
+                    <div id="glow" class="absolute inset-0 rounded-full bg-emerald-400/20 blur-3xl opacity-0 transition-opacity duration-1000 glow-effect"></div>
+                    
+                    <div id="arabic-text" class="absolute top-0 opacity-40 text-lg font-poppins transition-all duration-700"></div>
+                    
+                    <svg class="absolute w-full h-full">
+                        <circle cx="50%" cy="50%" r="90" fill="none" stroke="currentColor" stroke-width="4" class="opacity-5" />
+                        <circle id="progress-circle" cx="50%" cy="50%" r="90" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" class="progress-ring__circle text-emerald-600" />
+                    </svg>
+                    
+                    <div id="counter-val" class="text-7xl font-semibold tabular-nums font-poppins text-emerald-600 transition-transform duration-100">0</div>
+                </div>
+                
+                <div class="mt-8 text-center flex flex-col items-center">
+                    <h2 id="preset-label" class="text-sm font-medium tracking-widest uppercase mb-1 text-emerald-700">100 Mode</h2>
+                    <div id="target-ui" class="flex items-center justify-center space-x-1">
+                        <span id="progress-text" class="text-xs opacity-60 font-poppins">0 / 100</span>
+                        <div id="custom-input-container" class="hidden pointer-events-auto ml-2">
+                             <input type="number" id="custom-target-input" value="1000" onchange="updateCustomTarget(this.value)" class="bg-transparent border-b-2 border-emerald-500/50 text-sm w-20 text-center focus:outline-none font-bold text-emerald-600 pb-1" min="1">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Controls & Info -->
+        <footer class="w-full z-30 flex flex-col items-center space-y-6 pb-4">
+            <div id="toast" class="opacity-0 translate-y-4 transition-all duration-500 bg-emerald-600 text-white px-6 py-2 rounded-full text-sm font-semibold shadow-lg">
+                Target Reached!
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-2" id="preset-container">
+                <!-- Preset buttons injected here -->
+            </div>
+
+            <div class="text-center px-8 space-y-1 max-w-xs transition-opacity duration-500" id="info-panel">
+                <p id="meaning" class="text-xs font-medium italic text-slate-600"></p>
+                <p id="virtue" class="text-[10px] leading-relaxed opacity-60 text-slate-700"></p>
+            </div>
+
+            <button onclick="resetCount()" class="flex flex-col items-center space-y-2 group active:scale-95 transition-all">
+                <div class="p-4 rounded-full bg-red-600 text-white shadow-lg shadow-red-900/20 group-hover:bg-red-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                </div>
+                <span class="text-[10px] font-bold uppercase tracking-widest text-red-700 opacity-80">Restart</span>
+            </button>
+        </footer>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'click_digital_counter_v3';
+        const PRESETS = {
+            THIRTY_THREE: { id: 'THIRTY_THREE', label: '33 Mode', arabic: 'سُبْحَانَ اللهِ', meaning: 'Glory be to Allah', virtue: 'A quick round of 33 remembrance.', target: 33 },
+            CENTURY: { id: 'CENTURY', label: '100 Mode', arabic: 'لا إِلَهَ إِلا اللهُ', meaning: 'There is no god but Allah', virtue: 'A powerful sunnah goal for daily dhikr.', target: 100 },
+            CUSTOM: { id: 'CUSTOM', label: 'Custom', arabic: 'ذِكْر مُخَصَّص', meaning: 'Personal Target', virtue: 'Focus on your specific goal.', target: 1000 },
+            UNLIMITED: { id: 'UNLIMITED', label: 'Unlimited', arabic: 'ذِكْر', meaning: 'Infinite Remembrance', virtue: 'The hearts find rest in Allah.', target: null }
+        };
+
+        let state = {
+            count: 0,
+            presetId: 'CENTURY',
+            isDarkMode: false,
+            hapticsEnabled: true,
+            customTarget: 1000
+        };
+
+        // Audio setup (Web Audio API)
+        let audioCtx = null;
+        function playBeep() {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+                oscillator.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.2);
+
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.3);
+            } catch (e) {
+                console.warn('Audio playback failed:', e);
+            }
+        }
+
+        // Initialize from storage
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            state = { ...state, ...parsed };
+        }
+
+        function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+        const progressCircle = document.getElementById('progress-circle');
+        const radius = progressCircle.r.baseVal.value;
+        const circumference = radius * 2 * Math.PI;
+        progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
+
+        function updateUI() {
+            const preset = PRESETS[state.presetId];
+            const activeTarget = state.presetId === 'CUSTOM' ? state.customTarget : preset.target;
+            const isTargeted = activeTarget !== null;
+            const progress = isTargeted ? Math.min(state.count / activeTarget, 1) : 0;
+            const offset = circumference - (progress * circumference);
+            const isReached = isTargeted && state.count >= activeTarget;
+
+            // Theme Management
+            const body = document.getElementById('app-body');
+            const counter = document.getElementById('counter-val');
+            const dot = document.getElementById('status-dot');
+            const hapticsIcon = document.getElementById('haptics-icon');
+            const themeIcon = document.getElementById('theme-icon');
+            const presetLabel = document.getElementById('preset-label');
+            const customInput = document.getElementById('custom-target-input');
+
+            if (state.isDarkMode) {
+                body.className = "h-screen w-full flex flex-col items-center justify-between p-6 transition-colors duration-700 bg-slate-950 text-slate-100";
+                counter.className = "text-7xl font-semibold tabular-nums font-poppins text-emerald-400 transition-transform duration-100";
+                dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+                hapticsIcon.className = state.hapticsEnabled ? "w-5 h-5 text-emerald-400" : "w-5 h-5 text-slate-500";
+                themeIcon.innerHTML = '<path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" />';
+                themeIcon.className = "w-5 h-5 text-yellow-400";
+                customInput.style.color = "#34d399";
+            } else {
+                body.className = "h-screen w-full flex flex-col items-center justify-between p-6 transition-colors duration-700 bg-[#FDFCFB] text-slate-800";
+                counter.className = "text-7xl font-semibold tabular-nums font-poppins text-emerald-600 transition-transform duration-100";
+                dot.className = "w-2 h-2 rounded-full bg-emerald-600 animate-pulse";
+                hapticsIcon.className = state.hapticsEnabled ? "w-5 h-5 text-emerald-600" : "w-5 h-5 text-slate-400";
+                themeIcon.innerHTML = '<path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />';
+                themeIcon.className = "w-5 h-5 text-slate-700";
+                customInput.style.color = "#059669";
+            }
+
+            // Text Updates
+            counter.innerText = state.count;
+            document.getElementById('preset-label').innerText = preset.label;
+            document.getElementById('arabic-text').innerText = preset.arabic;
+            document.getElementById('meaning').innerText = `"${preset.meaning}"`;
+            document.getElementById('virtue').innerText = preset.virtue;
+            
+            // Progress Bar & Target Display
+            document.getElementById('progress-text').innerText = state.count + " / " + (activeTarget || '∞');
+            progressCircle.style.strokeDashoffset = offset;
+            
+            const inputCont = document.getElementById('custom-input-container');
+            const progText = document.getElementById('progress-text');
+            if (state.presetId === 'CUSTOM') {
+                inputCont.classList.remove('hidden');
+                progText.innerText = state.count + " / ";
+                customInput.value = state.customTarget;
+            } else {
+                inputCont.classList.add('hidden');
+            }
+
+            if (isReached) {
+                progressCircle.classList.add('text-emerald-400', 'stroke-[8px]');
+                document.getElementById('glow').classList.remove('opacity-0');
+            } else {
+                progressCircle.classList.remove('text-emerald-400', 'stroke-[8px]');
+                document.getElementById('glow').classList.add('opacity-0');
+            }
+
+            // Render Preset Buttons
+            const container = document.getElementById('preset-container');
+            container.innerHTML = '';
+            Object.values(PRESETS).forEach(p => {
+                const btn = document.createElement('button');
+                btn.innerText = p.label;
+                btn.className = `px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wide uppercase transition-all duration-300 ${
+                    state.presetId === p.id 
+                    ? 'bg-emerald-600 text-white shadow-lg scale-105' 
+                    : (state.isDarkMode ? 'bg-slate-900 text-slate-400 border border-slate-800' : 'bg-slate-100 text-slate-500 border border-slate-200')
+                }`;
+                btn.onclick = (e) => { e.stopPropagation(); setPreset(p.id); };
+                container.appendChild(btn);
+            });
+        }
+
+        function increment() {
+            state.count++;
+            
+            // Initialize audio on first tap if not yet done
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            
+            if (state.hapticsEnabled && window.navigator.vibrate) window.navigator.vibrate(40);
+            
+            const counter = document.getElementById('counter-val');
+            counter.style.transform = 'scale(1.25)';
+            setTimeout(() => counter.style.transform = 'scale(1)', 100);
+
+            const activeTarget = state.presetId === 'CUSTOM' ? state.customTarget : PRESETS[state.presetId].target;
+            if (activeTarget && state.count === activeTarget) {
+                if (state.hapticsEnabled && window.navigator.vibrate) window.navigator.vibrate([100, 50, 100]);
+                triggerCelebration();
+                playBeep();
+                showToast();
+            }
+            save();
+            updateUI();
+        }
+
+        function updateCustomTarget(val) {
+            const num = parseInt(val);
+            if (!isNaN(num) && num > 0) {
+                state.customTarget = num;
+                save();
+                updateUI();
+            }
+        }
+
+        function setPreset(id) {
+            state.presetId = id;
+            state.count = 0;
+            save();
+            updateUI();
+        }
+
+        function resetCount() {
+            // Instant reset as requested
+            state.count = 0;
+            if (state.hapticsEnabled && window.navigator.vibrate) window.navigator.vibrate(80);
+            save();
+            updateUI();
+        }
+
+        function toggleTheme() {
+            state.isDarkMode = !state.isDarkMode;
+            save();
+            updateUI();
+        }
+
+        function toggleHaptics() {
+            state.hapticsEnabled = !state.hapticsEnabled;
+            save();
+            updateUI();
+        }
+
+        function triggerCelebration() {
+            confetti({ 
+                particleCount: 150, 
+                spread: 70, 
+                origin: { y: 0.6 }, 
+                colors: ['#10b981', '#34d399', '#059669', '#ffffff'],
+                zIndex: 1000
+            });
+        }
+
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.replace('opacity-0', 'opacity-100');
+            toast.classList.replace('translate-y-4', 'translate-y-0');
+            setTimeout(() => {
+                toast.classList.replace('opacity-100', 'opacity-0');
+                toast.classList.replace('translate-y-0', 'translate-y-4');
+            }, 4000);
+        }
+
+        updateUI();
+    </script>
+</body>
 </html>

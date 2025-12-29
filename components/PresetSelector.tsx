@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { DHIKR_PRESETS } from '../constants';
-import { PresetKey } from '../types';
+import { DHIKR_PRESETS } from '../constants.tsx';
+import { PresetKey } from '../types.ts';
 
 interface PresetSelectorProps {
   selectedId: PresetKey;
