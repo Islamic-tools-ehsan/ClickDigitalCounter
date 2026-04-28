@@ -18,7 +18,7 @@ const Footer: React.FC<FooterProps> = ({ isDarkMode }) => {
               <span className="text-white font-bold text-sm">I</span>
             </div>
             <span className={`font-bold font-poppins tracking-wider text-sm ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-              ISLAMIS TECHNOLOGY
+              ISLAM IS TECHNOLOGY
             </span>
           </a>
           <p className="text-xs">Helping Muslims leverage technology for faith.</p>
@@ -32,10 +32,10 @@ const Footer: React.FC<FooterProps> = ({ isDarkMode }) => {
 
         <div className="flex flex-col items-center md:items-end space-y-2">
           <p className="text-xs flex items-center">
-            Built with <Heart className="w-3 h-3 mx-1 text-red-500 fill-red-500" /> by Islamis Technology
+            Built with <Heart className="w-3 h-3 mx-1 text-red-500 fill-red-500" /> by Islam Is Technology
           </p>
           <p className="text-[10px] opacity-60">
-            © {currentYear} Islamis Technology. All rights reserved.
+            © {currentYear} Islam Is Technology. All rights reserved.
           </p>
         </div>
       </div>

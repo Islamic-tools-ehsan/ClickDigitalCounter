@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ChevronDown, ExternalLink, Moon, Sun, Smartphone, Menu, X } from 'lucide-react';
+import { ChevronDown, ExternalLink, Moon, Sun, Smartphone, Menu, X, ArrowLeft } from 'lucide-react';
 
 interface HeaderProps {
   isDarkMode: boolean;
@@ -24,15 +24,23 @@ const Header: React.FC<HeaderProps> = ({ isDarkMode, onToggleTheme, hapticsEnabl
     <header className={`w-full z-50 fixed top-0 left-0 transition-colors duration-500 ${isDarkMode ? 'bg-slate-900/80' : 'bg-white/80'} backdrop-blur-md border-b ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
-          {/* Logo & Title */}
-          <div className="flex items-center space-x-3">
-            <a href="https://islamistechnology.com" className="flex items-center space-x-2 group">
+          {/* Back Button & Logo */}
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            <button 
+              onClick={() => window.history.length > 1 ? window.history.back() : window.location.href = 'https://islamistechnology.com'}
+              className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-600'}`}
+              title="Go Back"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+
+            <a href="https://islamistechnology.com" target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2 group">
               <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center transform group-hover:rotate-12 transition-transform duration-300">
                 <span className="text-white font-bold text-xl font-poppins">I</span>
               </div>
               <div className="hidden sm:block">
                 <h1 className={`text-sm font-bold tracking-tight font-poppins ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                  ISLAMIS TECHNOLOGY
+                  ISLAM IS TECHNOLOGY
                 </h1>
                 <p className="text-[10px] text-emerald-500 font-medium -mt-1 font-poppins">DIGITAL TASBEEH</p>
               </div>
@@ -59,6 +67,8 @@ const Header: React.FC<HeaderProps> = ({ isDarkMode, onToggleTheme, hapticsEnabl
                     <a
                       key={tool.name}
                       href={tool.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className={`flex items-center justify-between px-4 py-2 text-sm rounded-lg transition-colors ${isDarkMode ? 'text-slate-300 hover:bg-slate-700 hover:text-white' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
                     >
                       {tool.name}
@@ -117,6 +127,8 @@ const Header: React.FC<HeaderProps> = ({ isDarkMode, onToggleTheme, hapticsEnabl
               <a
                 key={tool.name}
                 href={tool.url}
+                target="_blank"
+                rel="noopener noreferrer"
                 className={`block px-4 py-3 text-base font-medium rounded-lg transition-colors ${isDarkMode ? 'text-slate-300 hover:bg-slate-800 hover:text-white' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
               >
                 {tool.name}

@@ -43,7 +43,7 @@ const TOOLS = [
 
 const ToolsSection: React.FC<ToolsSectionProps> = ({ isDarkMode }) => {
   return (
-    <section className={`w-full py-20 px-6 ${isDarkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
+    <section className={`w-full pt-8 pb-20 px-6 ${isDarkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <h2 className={`text-3xl font-bold font-poppins mb-4 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
@@ -59,6 +59,8 @@ const ToolsSection: React.FC<ToolsSectionProps> = ({ isDarkMode }) => {
             <a
               key={tool.name}
               href={tool.url}
+              target="_blank"
+              rel="noopener noreferrer"
               className={`group relative flex flex-col p-8 rounded-2xl transition-all duration-300 transform hover:-translate-y-1 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-750 border-slate-700' : 'bg-white hover:shadow-xl border-slate-100'} border`}
             >
               <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-6 transition-transform duration-300 group-hover:scale-110 ${tool.bg} ${tool.color}`}>

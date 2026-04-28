@@ -5,11 +5,10 @@ interface CounterDisplayProps {
   count: number;
   target: number | null;
   isDarkMode: boolean;
-  arabic: string;
   isTargetReached?: boolean;
 }
 
-const CounterDisplay: React.FC<CounterDisplayProps> = ({ count, target, isDarkMode, arabic, isTargetReached }) => {
+const CounterDisplay: React.FC<CounterDisplayProps> = ({ count, target, isDarkMode, isTargetReached }) => {
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
@@ -28,10 +27,6 @@ const CounterDisplay: React.FC<CounterDisplayProps> = ({ count, target, isDarkMo
       {isTargetReached && (
         <div className="absolute inset-0 rounded-full bg-emerald-400/20 blur-3xl animate-pulse scale-110 transition-opacity duration-1000" />
       )}
-
-      <div className={`absolute top-0 transition-all duration-1000 font-poppins text-lg text-center w-full ${isTargetReached ? 'opacity-100 scale-110 text-emerald-500 translate-y-[-10px]' : 'opacity-40'}`}>
-        {arabic}
-      </div>
 
       <svg className="absolute w-full h-full -rotate-90 filter drop-shadow-sm">
         <circle

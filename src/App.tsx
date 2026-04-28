@@ -121,10 +121,8 @@ export default function App() {
   }, [count, hapticsEnabled, targetValue, playBeep]);
 
   const resetCount = useCallback(() => {
-    if (confirm('Are you sure you want to restart your count?')) {
-      setCount(0);
-      if (hapticsEnabled && navigator.vibrate) navigator.vibrate(50);
-    }
+    setCount(0);
+    if (hapticsEnabled && navigator.vibrate) navigator.vibrate(50);
   }, [hapticsEnabled]);
 
   return (
@@ -138,23 +136,37 @@ export default function App() {
       />
 
       <main className="flex-1 w-full flex flex-col items-center justify-center relative px-6 mt-16 overflow-hidden">
-        {/* Transparent Tap Area */}
+        {/* Visible Tap Area */}
         <div 
-          className="absolute inset-0 z-10 cursor-pointer" 
+          className={`absolute inset-x-4 top-4 bottom-2 z-10 cursor-pointer rounded-[2.5rem] border-2 transition-all duration-300 flex flex-col items-center group
+            ${isDarkMode 
+              ? 'border-emerald-500/30 hover:border-emerald-500/50 hover:bg-emerald-500/5' 
+              : 'border-emerald-600/30 hover:border-emerald-600/50 hover:bg-emerald-600/5'
+            }`} 
           onClick={increment}
           aria-label="Increment counter"
-        />
+        >
+          {/* Arabic Text in Corner */}
+          <div className={`absolute top-6 right-8 transition-all duration-1000 font-poppins text-xl text-right transition-all pointer-events-none ${isTargetReached ? 'opacity-100 scale-110 text-emerald-500 translate-y-[2px]' : 'opacity-40'}`}>
+            {currentPreset.arabic}
+          </div>
+
+          <div className="flex-1" />
+
+          <span className={`text-[10px] uppercase tracking-[0.4em] font-bold opacity-40 group-hover:opacity-100 transition-opacity pointer-events-none font-poppins mb-2 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-700'}`}>
+            Tap anywhere to count
+          </span>
+        </div>
         
         <div className="z-20 pointer-events-none flex flex-col items-center max-w-sm w-full">
           <CounterDisplay 
             count={count} 
             target={targetValue} 
             isDarkMode={isDarkMode}
-            arabic={currentPreset.arabic}
             isTargetReached={isTargetReached}
           />
           
-          <div className="mt-8 text-center flex flex-col items-center">
+          <div className="mt-8 mb-12 text-center flex flex-col items-center">
             <h2 className={`text-sm font-medium tracking-widest uppercase mb-1 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-700'}`}>
               {currentPreset.label}
             </h2>
@@ -191,9 +203,9 @@ export default function App() {
         </AnimatePresence>
       </main>
 
-      {/* Preset Selector */}
-      <div className="w-full max-w-md px-6 pb-8 z-30">
-        <div className="flex flex-wrap justify-center gap-2 mb-8">
+      {/* Preset Selector & Controls */}
+      <div className="w-full max-w-md px-6 pb-6 z-30 pt-10">
+        <div className="flex flex-wrap justify-center gap-2 mb-6">
             {(Object.keys(PRESETS) as PresetKey[]).map((key) => (
               <button
                 key={key}
@@ -209,21 +221,19 @@ export default function App() {
             ))}
         </div>
 
-        <div className="text-center space-y-2 mb-12 opacity-80 min-h-[60px]">
-          <p className="text-xs font-medium italic">{currentPreset.meaning}</p>
-          <p className="text-[10px] leading-relaxed max-w-xs mx-auto">{currentPreset.virtue}</p>
-        </div>
-
-        <div className="flex justify-center">
+        <div className="flex justify-center mb-8">
             <button 
               onClick={resetCount} 
-              className="flex flex-col items-center space-y-2 group active:scale-95 transition-all"
+              className="flex flex-row items-center space-x-3 group active:scale-95 transition-all px-6 py-3 rounded-full bg-red-600/10 text-red-600 hover:bg-red-600 hover:text-white"
             >
-              <div className="p-4 rounded-full bg-red-600 text-white shadow-lg group-hover:bg-red-700 transition-colors">
-                <RefreshCw className="w-6 h-6" />
-              </div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-red-600 opacity-80">Restart</span>
+              <RefreshCw className="w-5 h-5" />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Restart Count</span>
             </button>
+        </div>
+
+        <div className="text-center space-y-2 mb-4 opacity-80 min-h-[60px]">
+          <p className="text-xs font-medium italic">{currentPreset.meaning}</p>
+          <p className="text-[10px] leading-relaxed max-w-xs mx-auto">{currentPreset.virtue}</p>
         </div>
       </div>
 
